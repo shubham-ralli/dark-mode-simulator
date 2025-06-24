@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail Dark Mode Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --preview-bg: #ffffff;
+            --accent-color: #007bff;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #adb5bd;
+            --border-color: #495057;
+            --preview-bg: #000000;
+            --accent-color: #4da6ff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--bg-secondary);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            background-color: var(--bg-secondary);
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .code-editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            resize: none;
+            tab-size: 2;
+        }
+
+        .preview-container {
+            height: 100%;
+            background-color: var(--preview-bg);
+            overflow: auto;
+            padding: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .preview-content {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: var(--preview-bg);
+        }
+
+        .preview-content.mobile {
+            max-width: 375px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--bg-primary);
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-bar {
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .mode-btn {
+            padding: 0.25rem 0.75rem;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-primary);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .badge {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge.dark {
+            background-color: #343a40;
+        }
+
+        /* Dark mode email styles */
+        .email-dark-mode {
+            filter: invert(1) hue-rotate(180deg);
+        }
+
+        .email-dark-mode img {
+            filter: invert(1) hue-rotate(180deg);
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            📧 Mail Dark Mode Tester
+        </div>
+        
+        <div class="controls">
+            <div class="mode-toggle">
+                <button class="mode-btn active" data-mode="desktop">🖥️ Desktop</button>
+                <button class="mode-btn" data-mode="mobile">📱 Mobile</button>
+            </div>
+            
+            <div class="dropdown">
+                <button class="btn" id="templatesBtn">📄 Templates ▼</button>
+                <div class="dropdown-content" id="templatesDropdown">
+                    <div class="dropdown-item" data-template="welcome">Welcome Email</div>
+                    <div class="dropdown-item" data-template="newsletter">Newsletter</div>
+                    <div class="dropdown-item" data-template="promotion">Promotional</div>
+                    <div class="dropdown-item" data-template="receipt">Receipt</div>
+                </div>
+            </div>
+            
+            <button class="btn" id="clearBtn">🗑️ Clear</button>
+            <button class="btn" id="copyBtn">📋 Copy</button>
+            <button class="btn btn-primary" id="themeToggle">🌙 Dark Mode</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Code Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>💻 HTML Email Code</span>
+                <span id="charCount">0 characters</span>
+            </div>
+            <div class="panel-content">
+                <textarea 
+                    class="code-editor" 
+                    id="codeEditor" 
+                    placeholder="Paste your HTML email code here...
+
+Try one of the sample templates from the Templates dropdown above, or paste your own HTML email code to see how it looks in both light and dark modes.
+
+Example:
+<table width='600' style='margin: 0 auto; font-family: Arial, sans-serif;'>
+  <tr>
+    <td style='padding: 20px; background-color: #f4f4f4;'>
+      <h1 style='color: #333;'>Hello World!</h1>
+      <p style='color: #666;'>This is a test email.</p>
+    </td>
+  </tr>
+</table>"
+                ></textarea>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>👁️ Live Preview</span>
+                <span class="badge" id="previewMode">Light Mode</span>
+            </div>
+            <div class="panel-content">
+                <div class="preview-container" id="previewContainer">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📧</div>
+                        <h3>Email Preview</h3>
+                        <p>Paste your HTML email code to see the live preview</p>
+                        <p style="margin-top: 1rem; font-size: 0.875rem; opacity: 0.7;">
+                            Use the Templates dropdown to get started with sample emails
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div>
+            <span id="lastUpdated">Ready</span>
+        </div>
+        <div>
+            <span>💡 Tip: Use Ctrl+D to toggle dark mode, Ctrl+K to clear</span>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let isDarkMode = false;
+        let currentPreviewMode = 'desktop';
+        let updateTimeout;
+
+        // Sample email templates
+        const templates = {
+            welcome: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome Email</title>
+</head>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <tr>
+            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Welcome to Our Platform!</h1>
+                <p style="color: #ffffff; margin: 10px 0 0 0; opacity: 0.9;">We're excited to have you on board</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 40px 30px;">
+                <h2 style="color: #333333; margin: 0 0 20px 0;">Hi there!</h2>
+                <p style="color: #666666; line-height: 1.6; margin: 0 0 20px 0;">
+                    Thank you for joining our community. We're thrilled to have you as part of our growing family of users who are passionate about creating amazing experiences.
+                </p>
+                <p style="color: #666666; line-height: 1.6; margin: 0 0 30px 0;">
+                    To get started, click the button below to verify your email address and complete your account setup.
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="#" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 15px 30px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                        Verify Email Address
+                    </a>
+                </div>
+                <p style="color: #666666; line-height: 1.6; margin: 20px 0 0 0; font-size: 14px;">
+                    If you have any questions, feel free to reach out to our support team. We're here to help!
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e9ecef;">
+                <p style="color: #6c757d; margin: 0; font-size: 12px;">
+                    © 2024 Your Company Name. All rights reserved.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`,
+
+            newsletter: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter</title>
+</head>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <tr>
+            <td style="background-color: #343a40; padding: 20px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Weekly Newsletter</h1>
+                <p style="color: #adb5bd; margin: 5px 0 0 0;">Stay updated with our latest news</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px;">
+                <h2 style="color: #212529; margin: 0 0 20px 0; font-size: 20px;">This Week's Highlights</h2>
+                
+                <div style="border-left: 4px solid #007bff; padding-left: 20px; margin: 20px 0;">
+                    <h3 style="color: #007bff; margin: 0 0 10px 0; font-size: 18px;">Feature Update</h3>
+                    <p style="color: #6c757d; line-height: 1.6; margin: 0;">
+                        We've released new features that will help you work more efficiently. Check out the improved dashboard and new analytics tools.
+                    </p>
+                </div>
+                
+                <div style="border-left: 4px solid #28a745; padding-left: 20px; margin: 20px 0;">
+                    <h3 style="color: #28a745; margin: 0 0 10px 0; font-size: 18px;">Community Spotlight</h3>
+                    <p style="color: #6c757d; line-height: 1.6; margin: 0;">
+                        Meet our featured community member who has been creating amazing projects using our platform.
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="#" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 5px; font-weight: bold;">
+                        Read Full Newsletter
+                    </a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d;">
+                <p style="margin: 0 0 10px 0;">You're receiving this because you subscribed to our newsletter.</p>
+                <a href="#" style="color: #007bff; text-decoration: none;">Unsubscribe</a> | 
+                <a href="#" style="color: #007bff; text-decoration: none;">Update Preferences</a>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`,
+
+            promotion: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Special Promotion</title>
+</head>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #fff3cd;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden;">
+        <tr>
+            <td style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); padding: 40px 20px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 32px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🎉 FLASH SALE!</h1>
+                <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 18px; opacity: 0.95;">Limited Time Offer</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 40px 30px; text-align: center;">
+                <div style="background-color: #fff3cd; border: 2px dashed #ffc107; border-radius: 10px; padding: 30px; margin: 0 0 30px 0;">
+                    <h2 style="color: #856404; margin: 0 0 15px 0; font-size: 36px;">50% OFF</h2>
+                    <p style="color: #856404; margin: 0; font-size: 18px; font-weight: bold;">Everything Must Go!</p>
+                </div>
+                
+                <p style="color: #333333; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                    Don't miss out on this incredible opportunity to save big on all our premium products. This offer won't last long!
+                </p>
+                
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                    <p style="color: #dc3545; margin: 0; font-weight: bold; font-size: 14px;">
+                        ⏰ Hurry! Sale ends in 24 hours
+                    </p>
+                </div>
+                
+                <div style="margin: 30px 0;">
+                    <a href="#" style="display: inline-block; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: #ffffff; text-decoration: none; padding: 18px 40px; border-radius: 30px; font-weight: bold; font-size: 18px; box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4); text-transform: uppercase;">
+                        Shop Now & Save
+                    </a>
+                </div>
+                
+                <p style="color: #6c757d; margin: 20px 0 0 0; font-size: 12px;">
+                    Use code: <strong>FLASH50</strong> at checkout
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #343a40; padding: 20px; text-align: center;">
+                <p style="color: #adb5bd; margin: 0; font-size: 12px;">
+                    © 2024 Your Store. All rights reserved. | <a href="#" style="color: #adb5bd;">Unsubscribe</a>
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`,
+
+            receipt: `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Receipt</title>
+</head>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f8f9fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #dee2e6;">
+        <tr>
+            <td style="background-color: #28a745; padding: 30px 20px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">✅ Payment Confirmed</h1>
+                <p style="color: #ffffff; margin: 10px 0 0 0; opacity: 0.9;">Thank you for your purchase!</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px;">
+                <div style="border-bottom: 2px solid #dee2e6; padding-bottom: 20px; margin-bottom: 20px;">
+                    <h2 style="color: #212529; margin: 0 0 10px 0; font-size: 20px;">Order Details</h2>
+                    <p style="color: #6c757d; margin: 0; font-size: 14px;">Order #12345 • December 24, 2024</p>
+                </div>
+                
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                    <tr style="background-color: #f8f9fa;">
+                        <td style="padding: 15px; border: 1px solid #dee2e6; font-weight: bold; color: #495057;">Item</td>
+                        <td style="padding: 15px; border: 1px solid #dee2e6; font-weight: bold; color: #495057; text-align: center;">Qty</td>
+                        <td style="padding: 15px; border: 1px solid #dee2e6; font-weight: bold; color: #495057; text-align: right;">Price</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px; border: 1px solid #dee2e6; color: #212529;">Premium Subscription</td>
+                        <td style="padding: 15px; border: 1px solid #dee2e6; color: #212529; text-align: center;">1</td>
+                        <td style="padding: 15px; border: 1px solid #dee2e6; color: #212529; text-align: right;">$29.99</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px; border: 1px solid #dee2e6; color: #212529;">Setup Fee</td>
+                        <td style="padding: 15px; border: 1px solid #dee2e6; color: #212529; text-align: center;">1</td>
+                        <td style="padding: 15px; border: 1px solid #dee2e6; color: #212529; text-align: right;">$9.99</td>
+                    </tr>
+                    <tr style="background-color: #f8f9fa; font-weight: bold;">
+                        <td style="padding: 15px; border: 1px solid #dee2e6; color: #212529;" colspan="2">Total</td>
+                        <td style="padding: 15px; border: 1px solid #dee2e6; color: #212529; text-align: right;">$39.98</td>
+                    </tr>
+                </table>
+                
+                <div style="background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 20px; margin: 20px 0;">
+                    <h3 style="color: #004085; margin: 0 0 10px 0; font-size: 16px;">What's Next?</h3>
+                    <p style="color: #004085; margin: 0; line-height: 1.6;">
+                        Your account has been upgraded and you now have access to all premium features. Check your account dashboard to get started.
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="#" style="display: inline-block; background-color: #007bff; color: #ffffff; text-decoration: none; padding: 15px 30px; border-radius: 5px; font-weight: bold;">
+                        Access Your Account
+                    </a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #dee2e6;">
+                <p style="color: #6c757d; margin: 0 0 10px 0; font-size: 12px;">
+                    Questions about your order? <a href="#" style="color: #007bff;">Contact Support</a>
+                </p>
+                <p style="color: #6c757d; margin: 0; font-size: 12px;">
+                    © 2024 Your Company. All rights reserved.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`
+        };
+
+        // DOM elements
+        const codeEditor = document.getElementById('codeEditor');
+        const previewContainer = document.getElementById('previewContainer');
+        const themeToggle = document.getElementById('themeToggle');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const templatesBtn = document.getElementById('templatesBtn');
+        const templatesDropdown = document.getElementById('templatesDropdown');
+        const charCount = document.getElementById('charCount');
+        const lastUpdated = document.getElementById('lastUpdated');
+        const previewMode = document.getElementById('previewMode');
+
+        // Update preview function
+        function updatePreview() {
+            const code = codeEditor.value.trim();
+            
+            if (code === '') {
+                previewContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📧</div>
+                        <h3>Email Preview</h3>
+                        <p>Paste your HTML email code to see the live preview</p>
+                        <p style="margin-top: 1rem; font-size: 0.875rem; opacity: 0.7;">
+                            Use the Templates dropdown to get started with sample emails
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Create preview content
+            const previewContent = document.createElement('div');
+            previewContent.className = 'preview-content';
+            
+            if (currentPreviewMode === 'mobile') {
+                previewContent.classList.add('mobile');
+            }
+
+            // Apply dark mode if needed
+            if (isDarkMode) {
+                previewContent.classList.add('email-dark-mode');
+            }
+
+            previewContent.innerHTML = code;
+            
+            previewContainer.innerHTML = '';
+            previewContainer.appendChild(previewContent);
+            
+            // Update character count and timestamp
+            charCount.textContent = `${code.length} characters`;
+            lastUpdated.textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+        }
+
+        // Debounced update function
+        function debouncedUpdate() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(updatePreview, 300);
+        }
+
+        // Event listeners
+        codeEditor.addEventListener('input', debouncedUpdate);
+
+        // Theme toggle
+        themeToggle.addEventListener('click', function() {
+            isDarkMode = !isDarkMode;
+            
+            if (isDarkMode) {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.innerHTML = '☀️ Light Mode';
+                previewMode.textContent = 'Dark Mode';
+                previewMode.classList.remove('badge');
+                previewMode.classList.add('badge', 'dark');
+            } else {
+                document.body.removeAttribute('data-theme');
+                themeToggle.innerHTML = '🌙 Dark Mode';
+                previewMode.textContent = 'Light Mode';
+                previewMode.classList.remove('dark');
+            }
+            
+            updatePreview();
+        });
+
+        // Preview mode toggle
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentPreviewMode = this.dataset.mode;
+                updatePreview();
+            });
+        });
+
+        // Clear button
+        clearBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all code?')) {
+                codeEditor.value = '';
+                updatePreview();
+            }
+        });
+
+        // Copy button
+        copyBtn.addEventListener('click', function() {
+            const code = codeEditor.value.trim();
+            if (code === '') {
+                alert('No code to copy!');
+                return;
+            }
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '✅ Copied!';
+                copyBtn.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.classList.remove('btn-success');
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                codeEditor.select();
+                document.execCommand('copy');
+                alert('Code copied to clipboard!');
+            });
+        });
+
+        // Templates dropdown
+        templatesBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            templatesDropdown.classList.toggle('show');
+        });
+
+        // Template selection
+        document.querySelectorAll('.dropdown-item[data-template]').forEach(item => {
+            item.addEventListener('click', function() {
+                const template = this.dataset.template;
+                if (templates[template]) {
+                    codeEditor.value = templates[template];
+                    updatePreview();
+                }
+                templatesDropdown.classList.remove('show');
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function() {
+            templatesDropdown.classList.remove('show');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+D to toggle dark mode
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                themeToggle.click();
+            }
+            
+            // Ctrl+K to clear
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                clearBtn.click();
+            }
+            
+            // Ctrl+Enter to update preview
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                updatePreview();
+            }
+        });
+
+        // Initialize with welcome template
+        codeEditor.value = templates.welcome;
+        updatePreview();
+
+        // Handle tab key in textarea
+        codeEditor.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                
+                this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 2;
+            }
+        });
+    </script>
+</body>
+</html>
